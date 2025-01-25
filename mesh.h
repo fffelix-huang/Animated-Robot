@@ -40,7 +40,7 @@ public:
     Mesh(std::vector<Vertex> vertices,
          std::vector<unsigned int> indices,
          std::vector<Texture> textures);
-    void Draw(Shader& shader);
+    void Draw(Shader& shader) const;
 
 private:
     unsigned int VBO, EBO;
@@ -84,7 +84,7 @@ void Mesh::setupMesh() {
                           (void*) offsetof(Vertex, TexCoords));
 }
 
-void Mesh::Draw(Shader& shader) {
+void Mesh::Draw(Shader& shader) const {
     int numDiffuse = 1;
     int numSpecular = 1;
     for (int i = 0; i < (int) textures.size(); i++) {

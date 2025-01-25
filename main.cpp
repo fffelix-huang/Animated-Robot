@@ -27,6 +27,24 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+struct Component {
+    const Model& model;
+    glm::mat4 translate = glm::mat4(1.0f);
+    glm::mat4 scale = glm::mat4(1.0f);
+
+    Component(const Model& model) :
+        model(model) {}
+
+    void setTranslate(glm::vec3 vec) { translate = glm::translate(glm::mat4(1.0f), vec); }
+
+    void setScale(glm::vec3 vec) { scale = glm::scale(glm::mat4(1.0f), vec); }
+
+    void Draw(Shader& shader) {
+        shader.setMat4("model", translate * scale);
+        model.Draw(shader);
+    }
+};
+
 int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -61,12 +79,41 @@ int main() {
 
     glEnable(GL_DEPTH_TEST);
 
-    Shader ourShader("shader.vs", "shader.fs");
+    Shader shader("shader.vs", "shader.fs");
 
     Model cube("assets/objects/Cube.obj");
     Model sphere("assets/objects/Sphere.obj");
 
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    Component torso(cube);
+    torso.setTranslate(glm::vec3(0.0f, 0.0f, -5.0f));
+    torso.setScale(glm::vec3(1.0f, 2.0f, 1.0f));
+    Component head(sphere);
+    head.setTranslate(glm::vec3(0.0f, 2.0f, -5.0f));
+    head.setScale(glm::vec3(1.5f, 1.5f, 1.5f));
+    Component L1arm(cube);
+    L1arm.setTranslate(glm::vec3(-1.0f, 0.5f, -5.0f));
+    L1arm.setScale(glm::vec3(0.5f, 1.0f, 1.0f));
+    Component L2arm(cube);
+    L2arm.setTranslate(glm::vec3(-1.0f, -0.6f, -5.0f));
+    L2arm.setScale(glm::vec3(0.5f, 1.0f, 1.0f));
+    Component R1arm(cube);
+    R1arm.setTranslate(glm::vec3(1.0f, 0.5f, -5.0f));
+    R1arm.setScale(glm::vec3(0.5f, 1.0f, 1.0f));
+    Component R2arm(cube);
+    R2arm.setTranslate(glm::vec3(1.0f, -0.6f, -5.0f));
+    R2arm.setScale(glm::vec3(0.5f, 1.0f, 1.0f));
+    Component L1leg(cube);
+    L1leg.setTranslate(glm::vec3(-0.5f, -2.0f, -5.0f));
+    L1leg.setScale(glm::vec3(0.5f, 1.0f, 1.0f));
+    Component L2leg(cube);
+    L2leg.setTranslate(glm::vec3(-0.5f, -3.1f, -5.0f));
+    L2leg.setScale(glm::vec3(0.5f, 1.0f, 1.0f));
+    Component R1leg(cube);
+    R1leg.setTranslate(glm::vec3(0.5f, -2.0f, -5.0f));
+    R1leg.setScale(glm::vec3(0.5f, 1.0f, 1.0f));
+    Component R2leg(cube);
+    R2leg.setTranslate(glm::vec3(0.5f, -3.1f, -5.0f));
+    R2leg.setScale(glm::vec3(0.5f, 1.0f, 1.0f));
 
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -78,20 +125,24 @@ int main() {
         glClearColor(0.15f, 0.35f, 0.25f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        ourShader.use();
+        shader.use();
 
         glm::mat4 projection = glm::perspective(
             glm::radians(camera.Zoom), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
+        shader.setMat4("projection", projection);
+        shader.setMat4("view", view);
 
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(1.0f, 2.0f, 1.0f));
-        ourShader.setMat4("model", model);
-
-        cube.Draw(ourShader);
+        torso.Draw(shader);
+        head.Draw(shader);
+        L1arm.Draw(shader);
+        L2arm.Draw(shader);
+        R1arm.Draw(shader);
+        R2arm.Draw(shader);
+        L1leg.Draw(shader);
+        L2leg.Draw(shader);
+        R1leg.Draw(shader);
+        R2leg.Draw(shader);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
