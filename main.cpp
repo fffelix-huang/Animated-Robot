@@ -36,17 +36,28 @@ struct Component {
     glm::mat4 scale = glm::mat4(1.0f);
     glm::mat4 rotate = glm::mat4(1.0f);
 
-    Component(const Model& model, Component* parent = nullptr) : model(model), parent(parent) {}
+    Component(const Model& model, Component* parent = nullptr) :
+        model(model),
+        parent(parent) {}
 
     void setTranslate(glm::vec3 vec) { translate = glm::translate(glm::mat4(1.0f), vec); }
 
     void setScale(glm::vec3 vec) { scale = glm::scale(glm::mat4(1.0f), vec); }
 
-    void setRotate(float degree, glm::vec3 vec) { rotate = glm::rotate(glm::mat4(1.0f), glm::radians(degree), vec); }
+    void setRotate(float degree, glm::vec3 vec) {
+        rotate = glm::rotate(glm::mat4(1.0f), glm::radians(degree), vec);
+    }
+
+    void setRotateAroundLocalOrigin(float degree, glm::vec3 axis, glm::vec3 pivot) {
+        glm::mat4 toPivot = glm::translate(glm::mat4(1.0f), -pivot);
+        glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(degree), axis);
+        glm::mat4 fromPivot = glm::translate(glm::mat4(1.0f), pivot);
+        rotate = fromPivot * rotation * toPivot;
+    }
 
     glm::mat4 getTransform() const {
         glm::mat4 parTransform = (parent == nullptr ? glm::mat4(1.0f) : parent->getTransform());
-        return translate * rotate * scale * parTransform;
+        return parTransform * translate * rotate * scale;
     }
 
     void Draw(Shader& shader) {
@@ -99,7 +110,7 @@ int main() {
     torso.setScale(glm::vec3(1.0f, 2.0f, 1.0f));
 
     Component head(sphere, &torso);
-    head.setTranslate(glm::vec3(0.0f, 1.5f, 0.0f));
+    head.setTranslate(glm::vec3(0.0f, 1.0f, 0.0f));
     head.setScale(glm::vec3(1.0f, 0.5f, 1.0f));
 
     Component L1arm(cube, &torso);
@@ -107,7 +118,7 @@ int main() {
     L1arm.setScale(glm::vec3(0.5f, 0.5f, 1.0f));
 
     Component L2arm(cube, &L1arm);
-    L2arm.setTranslate(glm::vec3(0.0f, -1.1f, 0.0f));
+    L2arm.setTranslate(glm::vec3(0.0f, -1.2f, 0.0f));
     L2arm.setScale(glm::vec3(1.0f, 1.0f, 1.0f));
 
     Component R1arm(cube, &torso);
@@ -115,11 +126,11 @@ int main() {
     R1arm.setScale(glm::vec3(0.5f, 0.5f, 1.0f));
 
     Component R2arm(cube, &R1arm);
-    R2arm.setTranslate(glm::vec3(0.0f, -1.1f, 0.0f));
+    R2arm.setTranslate(glm::vec3(0.0f, -1.2f, 0.0f));
     R2arm.setScale(glm::vec3(1.0f, 1.0f, 1.0f));
 
     Component L1leg(cube, &torso);
-    L1leg.setTranslate(glm::vec3(-0.5f, -2.0f, 0.0f));
+    L1leg.setTranslate(glm::vec3(-0.5f, -1.0f, 0.0f));
     L1leg.setScale(glm::vec3(0.5f, 0.5f, 1.0f));
 
     Component L2leg(cube, &L1leg);
@@ -127,12 +138,18 @@ int main() {
     L2leg.setScale(glm::vec3(1.0f, 1.0f, 1.0f));
 
     Component R1leg(cube, &torso);
-    R1leg.setTranslate(glm::vec3(0.5f, -2.0f, 0.0f));
+    R1leg.setTranslate(glm::vec3(0.5f, -1.0f, 0.0f));
     R1leg.setScale(glm::vec3(0.5f, 0.5f, 1.0f));
 
     Component R2leg(cube, &R1leg);
     R2leg.setTranslate(glm::vec3(0.0f, -1.1f, 0.0f));
     R2leg.setScale(glm::vec3(1.0f, 1.0f, 1.0f));
+
+    float arm1Deg = 0.0;
+    float arm2Deg = 0.0;
+    float leg1Deg = 0.0;
+    float leg2Deg = 0.0;
+    float timeElapsed = 0.0;
 
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -142,8 +159,25 @@ int main() {
         processInput(window);
 
         if (animation) {
-            ;
+            timeElapsed += deltaTime;
+            arm1Deg = 30.0f * std::sin(timeElapsed * 2.0f);
+            arm2Deg = 20.0f * std::sin(timeElapsed * 2.5f);
+            leg1Deg = 30.0f * std::sin(timeElapsed * 2.0f);
+            leg2Deg = 20.0f * std::sin(timeElapsed * 2.5f);
         }
+
+        L1arm.setRotateAroundLocalOrigin(arm1Deg, glm::vec3(1.0f, 0.0f, 0.0f),
+                                         glm::vec3(0.0f, 0.5f, 0.0f));
+        R1arm.setRotateAroundLocalOrigin(-arm1Deg, glm::vec3(1.0f, 0.0f, 0.0f),
+                                         glm::vec3(0.0f, 0.5f, 0.0f));
+        L2arm.setRotate(arm2Deg, glm::vec3(1.0f, 0.0f, 0.0f));
+        R2arm.setRotate(-arm2Deg, glm::vec3(1.0f, 0.0f, 0.0f));
+        L1leg.setRotateAroundLocalOrigin(-leg1Deg, glm::vec3(1.0f, 0.0f, 0.0f),
+                                         glm::vec3(0.0f, 0.5f, 0.0f));
+        R1leg.setRotateAroundLocalOrigin(leg1Deg, glm::vec3(1.0f, 0.0f, 0.0f),
+                                         glm::vec3(0.0f, 0.5f, 0.0f));
+        L2leg.setRotate(-leg2Deg, glm::vec3(1.0f, 0.0f, 0.0f));
+        R2leg.setRotate(leg2Deg, glm::vec3(1.0f, 0.0f, 0.0f));
 
         glClearColor(0.15f, 0.35f, 0.25f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
